@@ -1,0 +1,37 @@
+version: '2.1'
+services:
+  nginx:
+    image: smashwilson/lets-nginx
+    depends_on:
+      - rtorrent
+    restart: always
+    environment:
+      TZ: /usr/share/zoneinfo/Europe/Madrid
+      EMAIL: $EMAIL
+      DOMAIN: $DOMAIN
+      UPSTREAM: rtorrent:8080
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/letsencrypt:/etc/letsencrypt
+      - ./nginx/ssl:/etc/ssl
+      - ./nginx/templates:/templates
+      - ./data:/usr/share/nginx/html
+      - ./common/.htpasswd:/etc/nginx/.htpasswd:ro
+      - ./common/limits.conf:/etc/security/limits.conf:ro
+      - ./common/sysctl.conf:/etc/sysctl.conf:ro
+  rtorrent:
+    image: gists/rtorrent
+    restart: always
+    ports:
+      - 55990-56000:55990-56000
+    volumes:
+      - ./data:/download
+      - ./rtorrent/rtorrent.rc:/etc/rtorrent.rc:ro
+      - ./common/.htpasswd:/var/www/rutorrent/.htpasswd
+      - ./common/limits.conf:/etc/security/limits.conf:ro
+      - ./common/sysctl.conf:/etc/sysctl.conf:ro
+    environment:
+      USERNAME: $USER
+      PASSWORD: $PASS

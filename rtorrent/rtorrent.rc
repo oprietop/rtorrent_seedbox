@@ -1,40 +1,54 @@
-scgi_port = 127.0.0.1:5000
-encoding_list = UTF-8
-port_range = 55990-56000
-port_random = no
-check_hash = no
+# https://github.com/rakshasa/rtorrent/wiki/Config-Guide
+# https://github.com/rakshasa/rtorrent/wiki/CONFIG-Template
+# https://github.com/rakshasa/rtorrent/wiki/Performance-Tuning
+
+# Directories
 directory = /download/torrents
 session = /download/.session
-encryption = allow_incoming, try_outgoing, enable_retry
-use_udp_trackers = no
-dht = off
-peer_exchange = no
-set_max_file_size = 2048G
 
-throttle.global_down.max_rate.set_kb = 0
-throttle.global_up.max_rate.set_kb = 0
-throttle.max_downloads.global.set = 512
-throttle.max_uploads.global.set = 512
-throttle.min_peers.normal.set = 16
-throttle.max_peers.normal.set = 32
+# Client behaviour
+encoding.add = utf8
+scgi_port = 127.0.0.1:5000
+network.port_range.set = 55990-56000
+network.port_random.set = yes
+peer_exchange = no
+dht.mode.set = disable
+protocol.pex.set = no
+trackers.use_udp.set = no
+pieces.preload.type.set = 2
+
+# Peer settings
+throttle.max_downloads.global.set = 1000
+throttle.max_uploads.global.set   = 1000
+throttle.min_peers.normal.set = 500 
+throttle.max_peers.normal.set = 1000
 throttle.min_peers.seed.set = -1
 throttle.max_peers.seed.set = -1
-throttle.max_downloads.set = 32
-throttle.max_uploads.set = 16
-trackers.numwant.set = 8
-pieces.memory.max.set = 1536M
+throttle.max_downloads.set = 100
+throttle.max_uploads.set = 100
+trackers.numwant.set = 100
+protocol.encryption.set = allow_incoming, try_outgoing, enable_retry
 
+# Limits and Timeouts
 network.max_open_sockets.set = 2048
-network.max_open_files.set = 5120
-network.http.max_open.set = 8
-network.receive_buffer.size.set = 8M
-network.send_buffer.size.set = 24M
-pieces.preload.type.set = 2
+network.max_open_files.set = 10240
+network.http.max_open.set = 1024
+network.receive_buffer.size.set = 4M
+network.send_buffer.size.set = 12M
+network.http.dns_cache_timeout.set = 25
 network.xmlrpc.size_limit.set = 2M
 
+# Executors and schedulers
+execute = {sh, -c, /usr/bin/php /var/www/rutorrent/php/initplugins.php torrent &}
+schedule = watch_directory, 1, 1, "load_start=/download/.watch/*.torrent"
+schedule = untied_directory, 5, 5, "stop_untied=/download/.watch/*.torrent"
+schedule = espace_disque_insuffisant, 1, 30, close_low_diskspace=500M
 schedule2 = session_save, 1200, 43200, ((session.save))
 
-execute = {sh,-c,/usr/bin/php /var/www/rutorrent/php/initplugins.php torrent &}
-schedule = watch_directory,1,1,"load_start=/download/.watch/*.torrent"
-schedule = untied_directory,5,5,"stop_untied=/download/.watch/*.torrent"
-schedule = espace_disque_insuffisant,1,30,close_low_diskspace=500M
+# Logging
+log.open_file = "log", (cat,/download/torrents/rtorrent.log)
+log.add_output = "info", "log"
+
+# CURL options to add support for nonofficial SSL trackers and peers
+#network.http.ssl_verify_host.set = 0
+#network.http.ssl_verify_peer.set = 0
